@@ -1,0 +1,22 @@
+name:                hash
+version:             0.1.0.0
+#synopsis:
+#description:
+homepage:            https://github.com/githubuser/hash#readme
+license:             BSD3
+author:              Author name here
+maintainer:          example@example.com
+copyright:           2019 Author name here
+category:            Web
+extra-source-files:
+- README.md
+
+dependencies:
+  - base >= 4.7 && < 5
+  - parsec >= 3.1 && < 4
+  - process >= 1.6 && < 2
+
+executables:
+  hash:
+    source-dirs:      src
+    main:             Main.hs
