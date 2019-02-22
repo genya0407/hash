@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: dad252f0ad87c3c6f788863a84b379ac5616bfc77c9d62973aab3cc4528617c4
+-- hash: 8971d7d9738aa4b2e50753263f9a39320c613a329038c126a77298077605af0a
 
 name:           hash
 version:        0.1.0.0
@@ -22,6 +22,8 @@ extra-source-files:
 executable hash
   main-is: Main.hs
   other-modules:
+      Hash.Parser
+      Hash.Type
       Paths_hash
   hs-source-dirs:
       src
