@@ -6,11 +6,12 @@ import Text.Parsec.Char
 import Hash.Type
 
 parseLine :: String -> Either ParseError Expression
-parseLine = parse singleExpr ""
+parseLine = parse blockExpr ""
 
--- spaces1 = skipMany1 space
+spaces1 = skipMany1 space
 -- blockExpr = singleExpr `chainl1` exprPipe `chainl1` exprAnd `chainl1` exprOr `chainl1` exprSemi
--- exprPipe = try $ string "|" >> spaces1 >> return Piped
+blockExpr = singleExpr `chainl1` exprPipe --`chainl1` exprAnd `chainl1` exprOr `chainl1` exprSemi
+exprPipe = try $ string "|" >> spaces1 >> return Piped
 -- exprAnd = try $ string "&&" >> spaces1 >> return And
 -- exprOr = try $ string "||" >> spaces1 >> return Or
 -- exprSemi = try $ string ";" >> spaces >> return Block
