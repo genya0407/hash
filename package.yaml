@@ -15,6 +15,7 @@ dependencies:
   - base >= 4.7 && < 5
   - parsec >= 3.1 && < 4
   - process >= 1.6 && < 2
+  - unix
 
 executables:
   hash:

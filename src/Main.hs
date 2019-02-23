@@ -2,9 +2,10 @@ module Main where
 
 import GHC.IO.Handle (Handle, hClose, hDuplicateTo)
 import System.Process (createPipe)
-import System.Posix.Process (forkProcess, executeFile, getProcessStatus)
+import System.Exit (ExitCode(..))
+import System.Posix.Process (forkProcess, executeFile, getProcessStatus, ProcessStatus(..))
 import System.Posix.Types (ProcessID)
-import System.IO (stdout, hFlush)
+import System.IO (stdout, stdin, hFlush)
 import Debug.Trace (traceShowId)
 import Data.Maybe (fromJust)
 import Hash.Type
@@ -16,46 +17,23 @@ type Status = Integer
 type InputHandle = Handle
 type OutputHandle = Handle
 
-waitPid = fromJust <$> getProcessStatus True False
+waitPid :: ProcessID -> IO ExitCode
+waitPid pid = do
+  status <- getProcessStatus True False pid
+  case status of
+    Just (Exited exitcode) -> return exitcode
+    _ -> undefined -- FIXME
 
-execExpr :: (InputHandle, OutputHandle) -> Expression -> IO Status
-execExpr handles (Block expr1 expr2) = execExpr handles expr1 >> execExpr handles expr2
-execExpr handles (And expr1 expr2) = do
-  status <- execExpr handles expr1
-  if status == 0
-  then
-    execExpr handles expr2
-  else
-    return status
-execExpr handles (Or expr1 expr2) = do
-  status <- execExpr handles expr1
-  if status != 0
-  then
-    execExpr handles expr2
-  else
-    return status
-execExpr (input, output) (Piped expr1 expr2) = do
-  status <- waitPid =<< spawnExpr (input, output)
-  hClose input
-  hClose output
-  return status
+hDuplicateTo' h1 h2 = if h1 == h2 then return () else hDuplicateTo h1 h2
+
+execExpr :: (InputHandle, OutputHandle) -> Expression -> IO ExitCode
 execExpr (input, output) (Single cmd args) = do
-  pid <- spawnExpr (input, output) (Single cmd args)
-  waitPid pid
-
-spawnExpr (inputOutside, outputOutside) (Piped expr1 expr2) = do
-  (input, output) <- createPipe
-  _   <- spawnExpr (inputOutside, output) expr1
-  pid <- spawnExpr (input, outputOutside) expr2
-  return pid
-
-spawnExpr (input, output) (Single cmd args) = do
   pid <- forkProcess $ do
-    hDuplicateTo input stdin
-    hDuplicateTo output stdout
+    hDuplicateTo' input stdin
+    hDuplicateTo' output stdout
     let searchPath = not ('/' `elem` cmd)
     executeFile cmd searchPath args Nothing
-  return pid
+  waitPid pid
 
 main :: IO ()
 main = do
@@ -63,5 +41,5 @@ main = do
   line <- getLine
   case parseLine line of
     Left err -> print err
-    Right expr -> print expr --execSingleInstruction instruction
+    Right expr -> execExpr (stdin, stdout) expr >> return () --execSingleInstruction instruction
   main
