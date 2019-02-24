@@ -1,17 +1,16 @@
 module Main where
 
 import GHC.IO.Handle (Handle, hClose, hDuplicateTo)
+import System.Environment (lookupEnv)
 import System.Process (createPipe)
 import System.Exit (ExitCode(..))
 import System.Posix.Process (forkProcess, executeFile, getProcessStatus, ProcessStatus(..))
 import System.Posix.Types (ProcessID)
 import System.IO (stdout, stdin, stderr, hFlush, openFile, IOMode(ReadMode, WriteMode))
 import Debug.Trace (traceShowId)
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, fromMaybe)
 import Hash.Type
 import Hash.Parser
-
-prompt = putStr "Hash> " >> hFlush stdout
 
 type Status = Integer
 type InputHandle = Handle
@@ -66,6 +65,10 @@ execExpr (input, output) (Single cmd args fnameStdin fnameStdout fnameStderr) = 
 
   let searchPath = not ('/' `elem` cmd)
   executeFile cmd searchPath args Nothing
+
+prompt = do
+  p <- fromMaybe "Hash> " <$> lookupEnv "PROMPT"
+  putStr p >> hFlush stdout
 
 main :: IO ()
 main = do
