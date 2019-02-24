@@ -23,6 +23,7 @@ waitPid pid = do
   case status of
     Just (Exited exitcode) -> return exitcode
     _ -> undefined -- FIXME
+forkWait action = waitPid =<< forkProcess action
 
 hDuplicateTo' h1 h2 = if h1 == h2 then return () else hDuplicateTo h1 h2
 
@@ -41,6 +42,20 @@ hDuplicateTo' h1 h2 = if h1 == h2 then return () else hDuplicateTo h1 h2
 --     executeFile cmd searchPath args Nothing
 
 execExpr :: (InputHandle, OutputHandle) -> Expression -> IO ExitCode
+execExpr handles (And expr1 expr2) = do
+  status <- forkWait $ execExpr handles expr1 >> return ()
+  if status == ExitSuccess
+  then
+    execExpr handles expr2
+  else
+    return status
+execExpr handles (Or expr1 expr2) = do
+  status <- forkWait $ execExpr handles expr1 >> return ()
+  if status == ExitSuccess
+  then
+    return status
+  else
+    execExpr handles expr2
 execExpr (input, output) (Piped expr1 expr2) = do
   (readPipe, writePipe) <- createPipe
   forkProcess $ do
@@ -62,10 +77,9 @@ main = do
   case parseLine line of
     Left err -> print err
     Right expr -> do
-      pid <- forkProcess $ do
+      forkWait $ do
         execExpr (stdin, stdout) expr
         hFlush stdout
         return ()
-      waitPid pid
       return ()
   main
