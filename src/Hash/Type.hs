@@ -5,5 +5,5 @@ data Expression =
     And Expression Expression | -- expr1 && expr2
     Or Expression Expression | -- expr1 || expr2
     Piped Expression Expression | -- expr1 | expr2
-    Single String [String] -- cmd arg1 arg2
+    Single String [String] [String] [String] [String] -- cmd arg1 arg2 stdins stdouts stderrs
     deriving Show

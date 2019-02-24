@@ -15,22 +15,29 @@ exprAnd = try $ string "&&" >> spaces1 >> return And
 exprOr = try $ string "||" >> spaces1 >> return Or
 exprSemi = try $ string ";" >> spaces >> return Block
 
-exprTokens = (try $ between (char '"') (char '"') (many anyChar)) <|> (many1 $ noneOf " ;")
+--exprTokens = (try $ between (char '"') (char '"') (many anyChar)) <|> (many1 $ noneOf " ;")
 
-parseSingleCommand result = do
-  pMaybe <- optionMaybe $ do
-    try spaces
-    lookAhead (try $ exprTokens)
-
-  case pMaybe of
-    Just p -> 
-      if p `elem` ["|", "&&", "||", ";"]
-      then
-        return $ reverse result
-      else
-        exprTokens >> parseSingleCommand (p:result)
-    Nothing -> return $ reverse result
+data CmdToken = Stdin String | Stdout String | Stderr String | Other String
 
 singleExpr = do
-  cmd:args <- parseSingleCommand []
-  return $ Single cmd args
+  try spaces
+  cmdTokens <- many1 $ (try exprStdin <|> try exprStdout <|> try exprStderr <|> exprOther)
+  let fnameStdins = [fname | Stdin fname <- cmdTokens ]
+  let fnameStdouts = [fname | Stdout fname <- cmdTokens ]
+  let fnameStderrs = [fname | Stderr fname <- cmdTokens ]
+  let others = [cmd | Other cmd <- cmdTokens ]
+  let cmd = head others
+  let args = tail others
+  return $ Single cmd args fnameStdins fnameStdouts fnameStderrs
+  -- try $ (string ";" >> eof)
+  where
+    exprStdin = exprRedirect "<" Stdin
+    exprStdout = exprRedirect ">" Stdout
+    exprStderr = exprRedirect "2>" Stderr
+    exprRedirect tk constructor = do
+      string tk
+      try spaces
+      fname <- exprOtherString
+      return $ constructor fname
+    exprOtherString = many1 $ noneOf " |&;><"
+    exprOther = Other <$> exprOtherString
