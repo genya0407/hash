@@ -1,22 +1,26 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Hash.Evaluator(execExpr) where
 
+import Control.Monad (forM_)
 import GHC.IO.Handle (Handle, hClose)
 import System.Process (createPipe)
 import System.Exit (ExitCode(..), exitWith)
 import System.Posix.Process (forkProcess, executeFile, getProcessStatus, ProcessStatus(..))
 import System.Posix.Types (ProcessID)
+import System.Environment (setEnv)
 import System.IO (stdout, stdin, stderr, hFlush, openFile, IOMode(ReadMode, WriteMode))
+import qualified Data.HashMap.Strict as H
 import Hash.Type (Expression(..))
 import Hash.Utils (hDuplicateTo', waitPid, forkWait)
+import Hash.BuiltinCommand (builtinCommands)
 
 type InputHandle = Handle
 type OutputHandle = Handle
 
 execExpr :: (InputHandle, OutputHandle) -> Expression -> IO ExitCode
 execExpr handles (Block expr1 expr2) = do
-  forkWait $ execExpr handles expr1 >> return ()
-  forkWait $ execExpr handles expr2 >> return ()
+  execExpr handles expr1
+  execExpr handles expr2
 execExpr handles (And expr1 expr2) = do
   status <- forkWait $ execExpr handles expr1 >> return ()
   if status == ExitSuccess
@@ -51,4 +55,15 @@ execExpr (input, output) (Single cmd args fnameStdin fnameStdout fnameStderr) = 
     Nothing -> return ()
 
   let searchPath = not ('/' `elem` cmd)
-  executeFile cmd searchPath args Nothing
+  executeFile' cmd searchPath args Nothing
+
+executeFile' cmd searchPath args environments = do
+  case H.lookup cmd builtinCommands of
+    Just command -> do
+      setEnvironments environments
+      command args
+    Nothing -> forkWait $ executeFile cmd searchPath args environments
+  where
+    setEnvironments environments = case environments of
+                        Just envs -> forM_ envs $ \(k, v) -> setEnv k v
+                        Nothing -> return ()

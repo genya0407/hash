@@ -17,6 +17,8 @@ dependencies:
   - process >= 1.6 && < 2
   - unix
   - safe
+  - directory
+  - unordered-containers
 
 executables:
   hash:

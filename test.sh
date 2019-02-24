@@ -62,5 +62,6 @@ assert_side_effect "ls > $TEMPDIR/hoge" "ls > $TEMPDIR/fuga" "cmp --silent $TEMP
 assert_side_effect "ls | grep R > $TEMPDIR/hoge" "ls | grep R > $TEMPDIR/fuga" "cmp --silent $TEMPDIR/hoge $TEMPDIR/fuga"
 assert_side_effect "cat notexistfile 2> $TEMPDIR/hoge" "cat notexistfile 2> $TEMPDIR/fuga" "cmp --silent $TEMPDIR/hoge $TEMPDIR/fuga"
 assert "grep H < LICENSE"
+assert "cd src; ls; cd .."
 clean
 echo "finishing test"

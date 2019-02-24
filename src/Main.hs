@@ -22,9 +22,7 @@ main = do
   case parseLine line of
     Left err -> print err
     Right expr -> do
-      forkWait $ do
-        execExpr (stdin, stdout) expr
-        hFlush stdout
-        return ()
+      execExpr (stdin, stdout) expr
+      hFlush stdout
       return ()
   main
