@@ -14,7 +14,7 @@ import Hash.Parser (parseLine)
 import Hash.Evaluator (execExpr)
 
 prompt = fromMaybe "Hash> " <$> lookupEnv "PROMPT"
-inputSettings = Settings { complete = completeFilename, historyFile = Just "/home/sangenya/.hash_history", autoAddHistory = True }
+inputSettings = Settings { complete = completeFilename, historyFile = Nothing, autoAddHistory = True }
  
 main :: IO ()
 main = runInputT inputSettings repl
