@@ -23,7 +23,7 @@ exprSemi = try $ string ";" >> spaces >> return Block
 data CmdToken = Stdin String | Stdout String | Stderr String | Other String deriving Show
 
 singleExpr = do
-  try spaces
+  spaces
   cmdTokens :: [CmdToken] <- many1 (tryToken exprStdin <|> tryToken exprStdout <|> tryToken exprStderr <|> tryToken exprOther)
   let fnameStdin = lastMay [fname | Stdin fname <- cmdTokens ]
   let fnameStdout = lastMay [fname | Stdout fname <- cmdTokens ]
@@ -31,8 +31,8 @@ singleExpr = do
   let others = [cmd | Other cmd <- cmdTokens ]
   let cmd = head others
   let args = tail others
+  skipMany . try $ (spaces >> string ";" >> spaces >> eof)
   return $ Single cmd args fnameStdin fnameStdout fnameStderr
-  -- try $ (string ";" >> eof)
   where
     exprStdin = exprRedirect "<" Stdin
     exprStdout = exprRedirect ">" Stdout

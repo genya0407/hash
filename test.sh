@@ -52,10 +52,12 @@ function clean() {
 echo "starting test"
 setup
 assert "ls"
+assert " ls "
 assert "ls | grep R"
 assert "ls && echo fuga"
 assert "ls || echo hoge"
 assert "ls; echo hoge"
+assert "ls;"
 assert_side_effect "ls > $TEMPDIR/hoge" "ls > $TEMPDIR/fuga" "cmp --silent $TEMPDIR/hoge $TEMPDIR/fuga"
 assert_side_effect "ls | grep R > $TEMPDIR/hoge" "ls | grep R > $TEMPDIR/fuga" "cmp --silent $TEMPDIR/hoge $TEMPDIR/fuga"
 assert_side_effect "cat notexistfile 2> $TEMPDIR/hoge" "cat notexistfile 2> $TEMPDIR/fuga" "cmp --silent $TEMPDIR/hoge $TEMPDIR/fuga"
