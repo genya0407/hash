@@ -27,20 +27,6 @@ forkWait action = waitPid =<< forkProcess action
 
 hDuplicateTo' h1 h2 = if h1 == h2 then return () else hDuplicateTo h1 h2
 
--- spawnExpr :: (InputHandle, OutputHandle) -> Expression -> IO ProcessID
--- spawnExpr (input, output) (Piped expr1 expr2) = do
---   (readPipe, writePipe) <- createPipe
---   forkProcess $ do
---     hClose writePipe
---     execExpr (readPipe, output) expr2
---   execExpr (input, writePipe)
--- spawnExpr (input, output) (Single cmd args) = do
---   forkProcess $ do
---     hDuplicateTo' input stdin
---     hDuplicateTo' output stdout
---     let searchPath = not ('/' `elem` cmd)
---     executeFile cmd searchPath args Nothing
-
 execExpr :: (InputHandle, OutputHandle) -> Expression -> IO ExitCode
 execExpr handles (Block expr1 expr2) = do
   forkWait $ execExpr handles expr1 >> return ()
