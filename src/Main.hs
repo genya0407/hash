@@ -1,12 +1,14 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module Main where
 
 import GHC.IO.Handle (Handle, hClose, hDuplicateTo)
 import System.Environment (lookupEnv)
 import System.Process (createPipe)
-import System.Exit (ExitCode(..))
+import System.Exit (ExitCode(..), exitWith)
 import System.Posix.Process (forkProcess, executeFile, getProcessStatus, ProcessStatus(..))
 import System.Posix.Types (ProcessID)
 import System.IO (stdout, stdin, stderr, hFlush, openFile, IOMode(ReadMode, WriteMode))
+import Control.Exception (catch, IOException)
 import Debug.Trace (traceShowId)
 import Data.Maybe (fromJust, fromMaybe)
 import Hash.Type
@@ -73,7 +75,7 @@ prompt = do
 main :: IO ()
 main = do
   prompt
-  line <- getLine
+  line <- catch getLine $ \(_ :: IOException) -> exitWith ExitSuccess
   case parseLine line of
     Left err -> print err
     Right expr -> do
