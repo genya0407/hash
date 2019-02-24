@@ -5,7 +5,7 @@ import System.Process (createPipe)
 import System.Exit (ExitCode(..))
 import System.Posix.Process (forkProcess, executeFile, getProcessStatus, ProcessStatus(..))
 import System.Posix.Types (ProcessID)
-import System.IO (stdout, stdin, hFlush)
+import System.IO (stdout, stdin, stderr, hFlush, openFile, IOMode(ReadMode, WriteMode))
 import Debug.Trace (traceShowId)
 import Data.Maybe (fromJust)
 import Hash.Type
@@ -53,9 +53,17 @@ execExpr (input, output) (Piped expr1 expr2) = do
     return ()
   hClose writePipe
   execExpr (readPipe, output) expr2
-execExpr (input, output) (Single cmd args) = do
-  hDuplicateTo' input stdin
-  hDuplicateTo' output stdout
+execExpr (input, output) (Single cmd args fnameStdin fnameStdout fnameStderr) = do
+  case fnameStdin of
+    Just fname -> openFile fname ReadMode >>= flip hDuplicateTo' stdin
+    Nothing -> hDuplicateTo' input stdin
+  case fnameStdout of
+    Just fname -> openFile fname WriteMode >>= flip hDuplicateTo' stdout
+    Nothing -> hDuplicateTo' output stdout
+  case fnameStderr of
+    Just fname -> openFile fname WriteMode >>= flip hDuplicateTo' stderr
+    Nothing -> return ()
+
   let searchPath = not ('/' `elem` cmd)
   executeFile cmd searchPath args Nothing
 

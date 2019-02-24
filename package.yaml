@@ -16,6 +16,7 @@ dependencies:
   - parsec >= 3.1 && < 4
   - process >= 1.6 && < 2
   - unix
+  - safe
 
 executables:
   hash:

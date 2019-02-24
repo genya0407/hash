@@ -1,9 +1,12 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Hash.Parser(parseLine) where
 
 import Text.Parsec
 import Text.Parsec.Char
+import Safe (headMay, lastMay)
 import Hash.Type
+import Debug.Trace (traceShowId)
 
 parseLine :: String -> Either ParseError Expression
 parseLine = parse blockExpr ""
@@ -17,18 +20,18 @@ exprSemi = try $ string ";" >> spaces >> return Block
 
 --exprTokens = (try $ between (char '"') (char '"') (many anyChar)) <|> (many1 $ noneOf " ;")
 
-data CmdToken = Stdin String | Stdout String | Stderr String | Other String
+data CmdToken = Stdin String | Stdout String | Stderr String | Other String deriving Show
 
 singleExpr = do
   try spaces
-  cmdTokens <- many1 $ (try exprStdin <|> try exprStdout <|> try exprStderr <|> exprOther)
-  let fnameStdins = [fname | Stdin fname <- cmdTokens ]
-  let fnameStdouts = [fname | Stdout fname <- cmdTokens ]
-  let fnameStderrs = [fname | Stderr fname <- cmdTokens ]
+  cmdTokens :: [CmdToken] <- many1 (tryToken exprStdin <|> tryToken exprStdout <|> tryToken exprStderr <|> tryToken exprOther)
+  let fnameStdin = lastMay [fname | Stdin fname <- cmdTokens ]
+  let fnameStdout = lastMay [fname | Stdout fname <- cmdTokens ]
+  let fnameStderr = lastMay [fname | Stderr fname <- cmdTokens ]
   let others = [cmd | Other cmd <- cmdTokens ]
   let cmd = head others
   let args = tail others
-  return $ Single cmd args fnameStdins fnameStdouts fnameStderrs
+  return $ Single cmd args fnameStdin fnameStdout fnameStderr
   -- try $ (string ";" >> eof)
   where
     exprStdin = exprRedirect "<" Stdin
@@ -41,3 +44,7 @@ singleExpr = do
       return $ constructor fname
     exprOtherString = many1 $ noneOf " |&;><"
     exprOther = Other <$> exprOtherString
+    tryToken p = do
+      res <- try p
+      spaces
+      return res
