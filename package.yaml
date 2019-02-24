@@ -19,6 +19,8 @@ dependencies:
   - safe
   - directory
   - unordered-containers
+  - haskeline
+  - transformers
 
 executables:
   hash:

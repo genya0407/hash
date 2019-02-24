@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: be8344c7ff9cbbf086dc4087c1fd9fe0b8f9b6ed3870cca7304f730048ab0751
+-- hash: 36e8f57dee114579e0819d4ff4dbe8310379f18b2eb74f51bdbb3820d46dc9b5
 
 name:           hash
 version:        0.1.0.0
@@ -33,9 +33,11 @@ executable hash
   build-depends:
       base >=4.7 && <5
     , directory
+    , haskeline
     , parsec >=3.1 && <4
     , process >=1.6 && <2
     , safe
+    , transformers
     , unix
     , unordered-containers
   default-language: Haskell2010
