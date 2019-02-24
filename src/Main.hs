@@ -42,6 +42,9 @@ hDuplicateTo' h1 h2 = if h1 == h2 then return () else hDuplicateTo h1 h2
 --     executeFile cmd searchPath args Nothing
 
 execExpr :: (InputHandle, OutputHandle) -> Expression -> IO ExitCode
+execExpr handles (Block expr1 expr2) = do
+  forkWait $ execExpr handles expr1 >> return ()
+  forkWait $ execExpr handles expr2 >> return ()
 execExpr handles (And expr1 expr2) = do
   status <- forkWait $ execExpr handles expr1 >> return ()
   if status == ExitSuccess

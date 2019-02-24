@@ -9,11 +9,11 @@ parseLine :: String -> Either ParseError Expression
 parseLine = parse blockExpr ""
 
 spaces1 = skipMany1 space
-blockExpr = singleExpr `chainl1` exprPipe `chainl1` exprAnd `chainl1` exprOr --`chainl1` exprSemi
+blockExpr = singleExpr `chainl1` exprPipe `chainl1` exprAnd `chainl1` exprOr `chainl1` exprSemi
 exprPipe = try $ string "|" >> spaces1 >> return Piped
 exprAnd = try $ string "&&" >> spaces1 >> return And
 exprOr = try $ string "||" >> spaces1 >> return Or
--- exprSemi = try $ string ";" >> spaces >> return Block
+exprSemi = try $ string ";" >> spaces >> return Block
 
 exprTokens = (try $ between (char '"') (char '"') (many anyChar)) <|> (many1 $ noneOf " ;")
 
