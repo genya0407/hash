@@ -20,29 +20,40 @@ type OutputHandle = Handle
 waitPid :: ProcessID -> IO ExitCode
 waitPid pid = do
   status <- getProcessStatus True False pid
-  print status
   case status of
     Just (Exited exitcode) -> return exitcode
     _ -> undefined -- FIXME
 
 hDuplicateTo' h1 h2 = if h1 == h2 then return () else hDuplicateTo h1 h2
 
-spawnExpr :: (InputHandle, OutputHandle) -> Expression -> IO ProcessID
-spawnExpr (input, output) (Piped expr1 expr2) = do
-  forkProcess $ do
-    (outputPipe, inputPipe) <- createPipe
-    spawnExpr (input, inputPipe) expr1
-    execExpr (outputPipe, output) expr2
-    return ()
-spawnExpr (input, output) (Single cmd args) = do
-  forkProcess $ do
-    hDuplicateTo' input stdin
-    hDuplicateTo' output stdout
-    let searchPath = not ('/' `elem` cmd)
-    executeFile cmd searchPath args Nothing
+-- spawnExpr :: (InputHandle, OutputHandle) -> Expression -> IO ProcessID
+-- spawnExpr (input, output) (Piped expr1 expr2) = do
+--   (readPipe, writePipe) <- createPipe
+--   forkProcess $ do
+--     hClose writePipe
+--     execExpr (readPipe, output) expr2
+--   execExpr (input, writePipe)
+-- spawnExpr (input, output) (Single cmd args) = do
+--   forkProcess $ do
+--     hDuplicateTo' input stdin
+--     hDuplicateTo' output stdout
+--     let searchPath = not ('/' `elem` cmd)
+--     executeFile cmd searchPath args Nothing
 
 execExpr :: (InputHandle, OutputHandle) -> Expression -> IO ExitCode
-execExpr handle expr = spawnExpr handle expr >>= waitPid
+execExpr (input, output) (Piped expr1 expr2) = do
+  (readPipe, writePipe) <- createPipe
+  forkProcess $ do
+    hClose readPipe
+    execExpr (input, writePipe) expr1
+    return ()
+  hClose writePipe
+  execExpr (readPipe, output) expr2
+execExpr (input, output) (Single cmd args) = do
+  hDuplicateTo' input stdin
+  hDuplicateTo' output stdout
+  let searchPath = not ('/' `elem` cmd)
+  executeFile cmd searchPath args Nothing
 
 main :: IO ()
 main = do
@@ -50,5 +61,11 @@ main = do
   line <- getLine
   case parseLine line of
     Left err -> print err
-    Right expr -> execExpr (stdin, stdout) expr >> return () --execSingleInstruction instruction
+    Right expr -> do
+      pid <- forkProcess $ do
+        execExpr (stdin, stdout) expr
+        hFlush stdout
+        return ()
+      waitPid pid
+      return ()
   main
