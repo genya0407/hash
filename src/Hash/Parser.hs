@@ -11,11 +11,10 @@ import Debug.Trace (traceShowId)
 parseLine :: String -> Either ParseError Expression
 parseLine = parse blockExpr ""
 
-spaces1 = skipMany1 space
 blockExpr = singleExpr `chainl1` exprPipe `chainl1` exprAnd `chainl1` exprOr `chainl1` exprSemi
-exprPipe = try $ string "|" >> spaces1 >> return Piped
-exprAnd = try $ string "&&" >> spaces1 >> return And
-exprOr = try $ string "||" >> spaces1 >> return Or
+exprPipe = try $ string "|" >> (lookAhead . try $ noneOf "|") >> return Piped
+exprAnd = try $ string "&&" >> spaces >> return And
+exprOr = try $ string "||" >> spaces >> return Or
 exprSemi = try $ string ";" >> spaces >> return Block
 
 --exprTokens = (try $ between (char '"') (char '"') (many anyChar)) <|> (many1 $ noneOf " ;")
