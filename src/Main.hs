@@ -1,6 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Main where
 
+import GHC.IO.Handle (hDuplicate, hDuplicateTo)
 import System.Environment (lookupEnv)
 import System.IO (stdout, stdin, stderr, hFlush, hSetBuffering, hGetChar, BufferMode(..))
 import System.Exit (ExitCode(..), exitWith)
@@ -30,7 +31,11 @@ main = runInputT inputSettings repl
             case parseLine line of
               Left err -> print err
               Right expr -> do
+                originalStdin <- hDuplicate stdin
+                originalStdout <- hDuplicate stdout
                 execExpr (stdin, stdout) expr
                 hFlush stdout
+                hDuplicateTo originalStdin stdin
+                hDuplicateTo originalStdout stdout
                 return ()
           repl
