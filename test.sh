@@ -8,14 +8,13 @@ function assert() {
     set +ue
     echo $1 | PROMPT="" $BIN > $TEMPDIR/result
     eval $1 > $TEMPDIR/correct
-    set -ue
     cmp --silent $TEMPDIR/result $TEMPDIR/correct
     RET=$?
+    set -ue
     if [ $RET -eq 0 ] ;then
         echo "Success: $1"
     else
         echo "Failed: $1"
-        diff $TEMPDIR/correct tmp
         exit $RET
     fi
 }
@@ -24,8 +23,8 @@ function assert_side_effect() {
     set +ue
     echo $1 | PROMPT="" $BIN
     eval $2
-    set -ue
     eval $3
+    set -ue
     RET=$?
     if [ $RET -eq 0 ] ;then
         echo "Success: $1"
@@ -49,10 +48,16 @@ function clean() {
     rm -rf $TEMPDIR
 }
 
+trap catch ERR
+
+function catch() {
+    clean > /dev/null
+}
+
 echo "starting test"
 setup
-assert "ls"
-assert " ls "
+assert "ls src"
+assert " ls  src "
 assert "ls | grep R"
 assert "ls && echo fuga"
 assert "ls || echo hoge"
@@ -63,5 +68,6 @@ assert_side_effect "ls | grep R > $TEMPDIR/hoge" "ls | grep R > $TEMPDIR/fuga" "
 assert_side_effect "cat notexistfile 2> $TEMPDIR/hoge" "cat notexistfile 2> $TEMPDIR/fuga" "cmp --silent $TEMPDIR/hoge $TEMPDIR/fuga"
 assert "grep H < LICENSE"
 assert "cd src; ls; cd .."
+assert "rm -rf $TEMPDIR/hogedir; mkdir $TEMPDIR/hogedir; cp src/Hash/* $TEMPDIR/hogedir/; ls $TEMPDIR/hogedir"
 clean
 echo "finishing test"
