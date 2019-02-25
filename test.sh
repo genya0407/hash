@@ -15,6 +15,7 @@ function assert() {
         echo "Success: $1"
     else
         echo "Failed: $1"
+        clean
         exit $RET
     fi
 }
@@ -30,6 +31,7 @@ function assert_side_effect() {
         echo "Success: $1"
     else
         echo "Failed: $1"
+        clean
         exit $RET
     fi
 }
@@ -48,12 +50,6 @@ function clean() {
     rm -rf $TEMPDIR
 }
 
-trap catch ERR
-
-function catch() {
-    clean > /dev/null
-}
-
 echo "starting test"
 setup
 assert "ls src"
@@ -68,6 +64,6 @@ assert_side_effect "ls | grep R > $TEMPDIR/hoge" "ls | grep R > $TEMPDIR/fuga" "
 assert_side_effect "cat notexistfile 2> $TEMPDIR/hoge" "cat notexistfile 2> $TEMPDIR/fuga" "cmp --silent $TEMPDIR/hoge $TEMPDIR/fuga"
 assert "grep H < LICENSE"
 assert "cd src; ls; cd .."
-assert "rm -rf $TEMPDIR/hogedir; mkdir $TEMPDIR/hogedir; cp src/Hash/* $TEMPDIR/hogedir/; ls $TEMPDIR/hogedir"
+assert "rm -rf $TEMPDIR/hogedir 2> /dev/null; mkdir $TEMPDIR/hogedir; cp src/Hash/* $TEMPDIR/hogedir/; ls $TEMPDIR/hogedir"
 clean
-echo "finishing test"
+echo "All test past."
